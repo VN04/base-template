@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+// import { Input, Button, Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const cities = ['Kolkata', 'Delhi', 'Mumbai', 'Jaipur', 'Pune', 'Bangalore'];
@@ -12,7 +12,7 @@ const buses = {
 
 function SearchForm({ onSearch }) {
   const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
+  // const [destination, setDestination] = useState('');
   const [date, setDate] = useState('');
 
   const handleSubmit = (e) => {
