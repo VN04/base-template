@@ -100,11 +100,6 @@ function Quiz() {
           >
             Submit
           </Button>
-          {result && (
-            <p className={`text-xl font-semibold ${result.includes("Correct") ? 'text-green-500' : 'text-red-500'}`}>
-              {result}
-            </p>
-          )}
         </div>
         <div className="flex justify-center mt-4">
           <Button
@@ -115,6 +110,11 @@ function Quiz() {
             Next Question
           </Button>
         </div>
+        <div className="flex justify-center space-x-4"> {result && (
+            <p className={`text-xl font-semibold ${result.includes("Correct") ? 'text-green-500' : 'text-red-500'}`}>
+              {result}
+            </p>
+          )}</div>
       </CardContent>
     </Card>
   );
