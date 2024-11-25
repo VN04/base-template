@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Input } from '@/components/ui/input';
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const cities = ['Kolkata', 'Delhi', 'Mumbai', 'Jaipur', 'Pune', 'Bangalore'];

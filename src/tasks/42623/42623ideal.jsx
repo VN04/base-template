@@ -9,14 +9,13 @@ const cities = ["Kolkata", "Delhi", "Mumbai", "Jaipur", "Pune", "Bangalore"];
 
 const busRoutes = [
   { from: "Kolkata", to: "Delhi", buses: [
-    { id: 1, departure: "10:00", arrival: "22:00", price: 1500, seats: 30 },
-    { id: 2, departure: "14:00", arrival: "02:00", price: 1800, seats: 25 },
+    { id: 1, departure: "10:00 AM", arrival: "10:00 PM", price: 1500, seats: 30 },
+    { id: 2, departure: "2:00 PM", arrival: "2:00 AM", price: 1800, seats: 25 },
   ]},
   { from: "Mumbai", to: "Pune", buses: [
-    { id: 3, departure: "08:00", arrival: "12:00", price: 500, seats: 40 },
-    { id: 4, departure: "16:00", arrival: "20:00", price: 600, seats: 35 },
+    { id: 3, departure: "8:00 AM", arrival: "12:00 PM", price: 500, seats: 40 },
+    { id: 4, departure: "4:00 PM", arrival: "8:00 PM", price: 600, seats: 35 },
   ]},
-  // Add more routes as needed
 ];
 
 export default function App() {
@@ -49,14 +48,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
+    <div className="min-h-screen bg-gradient-to-r from-blue-400 to-purple-500 p-4 sm:p-6 flex items-center justify-center">
+      <Card className="max-w-2xl w-full bg-white shadow-xl rounded-lg">
+        <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-t-lg py-4">
           <CardTitle className="text-2xl font-bold text-center">
             Bus Booking App
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {step === 1 && (
             <SearchForm
               from={from}
@@ -101,7 +100,7 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="from">From</Label>
+        <Label htmlFor="from" className="font-semibold">From</Label>
         <Select value={from} onValueChange={setFrom}>
           <SelectTrigger id="from">
             <SelectValue placeholder="Select origin city" />
@@ -116,7 +115,7 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
         </Select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="to">To</Label>
+        <Label htmlFor="to" className="font-semibold">To</Label>
         <Select value={to} onValueChange={setTo}>
           <SelectTrigger id="to">
             <SelectValue placeholder="Select destination city" />
@@ -131,7 +130,7 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
         </Select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="date">Date of Travel</Label>
+        <Label htmlFor="date" className="font-semibold">Date of Travel</Label>
         <Input
           id="date"
           type="date"
@@ -139,7 +138,7 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
           onChange={(e) => setDate(e.target.value)}
         />
       </div>
-      <Button onClick={handleSearch} className="w-full">
+      <Button onClick={handleSearch} className="w-full bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white font-semibold mt-4">
         Search Buses
       </Button>
     </div>
@@ -148,13 +147,13 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
 
 function BusList({ buses, handleBooking }) {
   if (buses.length === 0) {
-    return <p className="text-center">No buses available for this route.</p>;
+    return <p className="text-center text-gray-600">No buses available for this route.</p>;
   }
 
   return (
     <div className="space-y-4">
       {buses.map((bus) => (
-        <Card key={bus.id} className="flex justify-between items-center p-4">
+        <Card key={bus.id} className="flex justify-between items-center p-4 shadow-md hover:shadow-lg transition-shadow">
           <div>
             <p className="font-semibold">
               {bus.departure} - {bus.arrival}
@@ -162,7 +161,9 @@ function BusList({ buses, handleBooking }) {
             <p>Price: ₹{bus.price}</p>
             <p>Available Seats: {bus.seats}</p>
           </div>
-          <Button onClick={() => handleBooking(bus)}>Book</Button>
+          <Button onClick={() => handleBooking(bus)} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold">
+            Book
+          </Button>
         </Card>
       ))}
     </div>
@@ -184,12 +185,12 @@ function BookingConfirmation({ bus, tickets, setTickets, handlePayment }) {
           min="1"
           max={bus.seats}
           value={tickets}
-          onChange={(e) => setTickets(Math.min(parseInt(e.target.value), bus.seats))}
+          onChange={(e) => setTickets(Math.min(parseInt(e.target.value) || 1, bus.seats))}
           className="w-20"
         />
       </div>
       <p className="font-semibold">Total Amount: ₹{bus.price * tickets}</p>
-      <Button onClick={handlePayment} className="w-full">
+      <Button onClick={handlePayment} className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold">
         Pay Now
       </Button>
     </div>

@@ -1,109 +1,124 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-const Cup = ({ onClick, revealed, hasBall }) => (
-  <div
-    className="w-24 h-32 bg-blue-500 rounded-b-full cursor-pointer transform transition-transform hover:scale-105"
-    onClick={onClick}
-  >
-    {revealed && (
-      <div className={`w-8 h-8 rounded-full mx-auto mt-4 ${hasBall ? "bg-yellow-400" : "bg-transparent"}`} />
-    )}
-  </div>
-);
-
-const GameBoard = ({ cups, onCupClick, gameState }) => (
-  <div className="flex justify-center space-x-8 my-8">
-    {cups.map((cup, index) => (
-      <Cup
-        key={index}
-        onClick={() => onCupClick(index)}
-        revealed={gameState === "result"}
-        hasBall={cup}
-      />
-    ))}
-  </div>
-);
-
-const shuffleArray = (array) => {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-};
-
-export default function App() {
-  const [cups, setCups] = useState([false, false, false]);
-  const [score, setScore] = useState(0);
-  const [gameState, setGameState] = useState("idle");
-  const [message, setMessage] = useState("");
-
-  const startGame = () => {
-    const initialCups = [true, false, false];
-    setCups(shuffleArray(initialCups));
-    setGameState("playing");
-    setMessage("");
-  };
-
-  const endGame = () => {
-    setGameState("idle");
-    setMessage(`Game Over! Your score: ${score}`);
-  };
-
-  const handleCupClick = (index) => {
-    if (gameState !== "playing") return;
-
-    setGameState("result");
-    if (cups[index]) {
-      setScore(score + 1);
-      setMessage("Correct! You found the ball!");
-    } else {
-      setMessage("Wrong! The ball was in another cup.");
-    }
-  };
+function App() {
+  const [reminders, setReminders] = useState([]);
+  const [newReminder, setNewReminder] = useState({ note: '', time: '' });
+  const [alert, setAlert] = useState(null);
 
   useEffect(() => {
-    let timer;
-    if (gameState === "playing") {
-      timer = setTimeout(() => {
-        setCups((prevCups) => shuffleArray(prevCups));
-      }, 1000);
+    const checkReminders = () => {
+      const now = new Date();
+      reminders.forEach((reminder, index) => {
+        const reminderTime = new Date(reminder.time);
+        if (!reminder.completed && reminderTime <= now && !reminder.snoozed) {
+          setAlert({ ...reminder, index });
+        }
+      });
+    };
+
+    const timer = setInterval(checkReminders, 1000);
+    return () => clearInterval(timer);
+  }, [reminders]);
+
+  const addReminder = () => {
+    if (newReminder.note && newReminder.time) {
+      setReminders([...reminders, { ...newReminder, completed: false, snoozed: false }]);
+      setNewReminder({ note: '', time: '' });
     }
-    return () => clearTimeout(timer);
-  }, [gameState]);
+  };
+
+  const handleAlertAction = (action) => {
+    const updatedReminders = [...reminders];
+    if (action === 'complete') {
+      updatedReminders[alert.index].completed = true;
+    } else {
+      updatedReminders[alert.index].snoozed = true;
+    }
+    setReminders(updatedReminders);
+    setAlert(null);
+  };
+
+  const ReminderCard = ({ reminder, status }) => (
+    <Card className="mb-4">
+      <CardHeader>
+        <CardTitle>{reminder.note}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p>Time: {new Date(reminder.time).toLocaleString()}</p>
+        <p>Status: {status}</p>
+      </CardContent>
+      {status === 'Active' && (
+        <CardFooter>
+          <Button onClick={() => {
+            const updated = [...reminders];
+            updated[reminders.indexOf(reminder)].completed = true;
+            setReminders(updated);
+          }}>Mark as Done</Button>
+        </CardFooter>
+      )}
+    </Card>
+  );
+
+  const filteredReminders = {
+    active: reminders.filter(r => !r.completed && !r.snoozed),
+    done: reminders.filter(r => r.completed),
+    overdue: reminders.filter(r => r.snoozed && !r.completed),
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Cup and Ball Game</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <GameBoard cups={cups} onCupClick={handleCupClick} gameState={gameState} />
-          {message && (
-            <p className="text-center font-semibold mt-4 text-lg">{message}</p>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-center space-x-4">
-          <Button
-            onClick={startGame}
-            disabled={gameState === "playing"}
-            className="bg-green-500 hover:bg-green-600 text-white"
-          >
-            Start Game
-          </Button>
-          <Button
-            onClick={endGame}
-            disabled={gameState === "idle"}
-            className="bg-red-500 hover:bg-red-600 text-white"
-          >
-            End Game
-          </Button>
-        </CardFooter>
-      </Card>
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-2xl font-bold mb-4 text-center">Reminder App</h1>
+        <div className="mb-4">
+          <Label htmlFor="note">Note</Label>
+          <Input 
+            id="note" 
+            value={newReminder.note} 
+            onChange={(e) => setNewReminder({...newReminder, note: e.target.value})} 
+            placeholder="Reminder note" 
+            className="mb-2"
+          />
+          <Label htmlFor="time">Time</Label>
+          <Input 
+            id="time" 
+            type="datetime-local" 
+            value={newReminder.time} 
+            onChange={(e) => setNewReminder({...newReminder, time: e.target.value})} 
+            className="mb-2"
+          />
+          <Button onClick={addReminder}>Add Reminder</Button>
+        </div>
+
+        {alert && (
+          <div className="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+            <strong className="font-bold">Reminder: </strong>
+            <span>{alert.note}</span>
+            <div className="mt-2">
+              <Button onClick={() => handleAlertAction('complete')} className="mr-2">Complete</Button>
+              <Button onClick={() => handleAlertAction('ignore')}>Ignore</Button>
+            </div>
+          </div>
+        )}
+
+        {['Active', 'Done', 'Overdue'].map(section => (
+          <div key={section} className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">{section} Reminders</h2>
+            {filteredReminders[section.toLowerCase()].length === 0 ? (
+              <p>No reminders here.</p>
+            ) : (
+              filteredReminders[section.toLowerCase()].map((reminder, idx) => (
+                <ReminderCard key={idx} reminder={reminder} status={section} />
+              ))
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+
+export default App;
