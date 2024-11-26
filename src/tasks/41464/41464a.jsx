@@ -1,112 +1,172 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-const GameArea = ({ onGameOver, score }) => {
-  const [dinoPos, setDinoPos] = useState(50);
+const GAME_HEIGHT = 300;
+const DINO_HEIGHT = 60;
+const DINO_WIDTH = 60;
+const HURDLE_WIDTH = 20;
+const HURDLE_HEIGHT = 40;
+const JUMP_HEIGHT = 100;
+const JUMP_DURATION = 500;
+
+const Dinosaur = ({ bottom }) => (
+  <div
+    className="absolute left-10"
+    style={{
+      bottom,
+      width: DINO_WIDTH,
+      height: DINO_HEIGHT,
+      backgroundColor: "green",
+      transition: `bottom ${JUMP_DURATION}ms ease-out`,
+    }}
+  />
+);
+
+const Hurdle = ({ left, height }) => (
+  <div
+    className="absolute bottom-0"
+    style={{
+      left,
+      width: HURDLE_WIDTH,
+      height,
+      backgroundColor: "red",
+    }}
+  />
+);
+
+export default function App() {
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
+  const [dinoBottom, setDinoBottom] = useState(0);
   const [hurdles, setHurdles] = useState([]);
-  const [gameSpeed, setGameSpeed] = useState(10);
-  const [isJumping, setIsJumping] = useState(false);
+  const [speed, setSpeed] = useState(5);
 
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.code === 'Space' && !isJumping) {
-        jump();
-      }
-    };
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isJumping]);
+  const jump = useCallback(() => {
+    if (dinoBottom === 0) {
+      setDinoBottom(JUMP_HEIGHT);
+      setTimeout(() => setDinoBottom(0), JUMP_DURATION);
+    }
+  }, [dinoBottom]);
 
-  const jump = () => {
-    setIsJumping(true);
-    setTimeout(() => setIsJumping(false), 500);
+  const startGame = () => {
+    setGameStarted(true);
+    setGameOver(false);
+    setScore(0);
+    setHurdles([]);
+    setSpeed(5);
   };
 
   useEffect(() => {
+    if (!gameStarted) return;
+
     const gameLoop = setInterval(() => {
-      setHurdles((prevHurdles) => {
-        let newHurdles = prevHurdles.map(h => ({ ...h, x: h.x - gameSpeed }));
-        if (Math.random() < 0.02) {
-          newHurdles.push({ x: 800, height: Math.random() > 0.5 ? 50 : 100 });
+      setScore((prevScore) => {
+        const newScore = prevScore + 1;
+        if (newScore % 500 === 0) {
+          setSpeed((prevSpeed) => prevSpeed + 1);
         }
-        newHurdles = newHurdles.filter(h => h.x > -50);
+        return newScore;
+      });
+
+      setHurdles((prevHurdles) => {
+        const newHurdles = prevHurdles
+          .map((hurdle) => ({ ...hurdle, left: hurdle.left - speed }))
+          .filter((hurdle) => hurdle.left > -HURDLE_WIDTH);
+
+        if (Math.random() < 0.02 && prevHurdles.length < 3) {
+          newHurdles.push({
+            left: window.innerWidth,
+            height: Math.random() < 0.5 ? HURDLE_HEIGHT : HURDLE_HEIGHT * 1.5,
+          });
+        }
+
         return newHurdles;
       });
 
-      if (hurdles.some(h => 
-        h.x < 100 && h.x > 0 && ((!isJumping && dinoPos < h.height + 20) || (isJumping && dinoPos > h.height - 20))
-      )) {
-        clearInterval(gameLoop);
-        onGameOver();
-      }
+      const dino = {
+        left: 10,
+        right: 10 + DINO_WIDTH,
+        top: GAME_HEIGHT - DINO_HEIGHT - dinoBottom,
+        bottom: dinoBottom,
+      };
 
-      if (score % 500 === 0 && score !== 0) {
-        setGameSpeed(s => s + 1);
+      const collision = hurdles.some(
+        (hurdle) =>
+          hurdle.left < dino.right &&
+          hurdle.left + HURDLE_WIDTH > dino.left &&
+          GAME_HEIGHT - hurdle.height < dino.top + DINO_HEIGHT
+      );
+
+      if (collision) {
+        setGameOver(true);
+        setGameStarted(false);
+        clearInterval(gameLoop);
       }
-    }, 50);
+    }, 1000 / 60);
 
     return () => clearInterval(gameLoop);
-  }, [dinoPos, hurdles, gameSpeed, isJumping, onGameOver, score]);
-
-  return (
-    <div className="relative h-64 w-full bg-gray-100 overflow-hidden">
-      <div 
-        className="absolute bottom-0 left-10 w-10 h-10 bg-green-500" 
-        style={{ bottom: `${dinoPos}px` }}
-      ></div>
-      {hurdles.map((hurdle, idx) => (
-        <div 
-          key={idx} 
-          className="absolute bottom-0 bg-red-500" 
-          style={{ left: `${hurdle.x}px`, width: '20px', height: `${hurdle.height}px` }}
-        ></div>
-      ))}
-    </div>
-  );
-};
-
-export default function App() {
-  const [gameOn, setGameOn] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const startGame = () => {
-    setGameOn(true);
-    setScore(0);
-  };
-
-  const gameOver = useCallback(() => {
-    setGameOn(false);
-  }, []);
+  }, [gameStarted, hurdles, dinoBottom, speed]);
 
   useEffect(() => {
-    if (gameOn) {
-      const scoreInterval = setInterval(() => {
-        setScore(s => s + 10);
-      }, 100);
-      return () => clearInterval(scoreInterval);
-    }
-  }, [gameOn]);
+    const handleKeyPress = (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (!gameStarted && !gameOver) {
+          startGame();
+        } else if (gameStarted) {
+          jump();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [gameStarted, gameOver, jump]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900">
-      <Card className="w-full max-w-sm mb-4">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle>Dino Jump</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            Dino Jump Game
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {gameOn ? (
-            <GameArea onGameOver={gameOver} score={score} />
-          ) : (
-            <div className="text-center">
-              <p className="mb-4">Score: {score}</p>
-              <Button onClick={startGame}>Start Game</Button>
-            </div>
-          )}
+          <div
+            className="relative bg-white border-2 border-gray-300 overflow-hidden"
+            style={{ height: GAME_HEIGHT }}
+          >
+            {gameStarted && (
+              <>
+                <Dinosaur bottom={dinoBottom} />
+                {hurdles.map((hurdle, index) => (
+                  <Hurdle key={index} left={hurdle.left} height={hurdle.height} />
+                ))}
+              </>
+            )}
+            {!gameStarted && !gameOver && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Button onClick={startGame}>Start Game</Button>
+              </div>
+            )}
+            {gameOver && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-white">
+                <h2 className="text-2xl font-bold mb-4">Game Over</h2>
+                <p className="text-xl mb-4">Score: {score}</p>
+                <Button onClick={startGame}>Restart</Button>
+              </div>
+            )}
+          </div>
         </CardContent>
+        <CardFooter className="flex justify-between items-center">
+          <div className="text-lg font-semibold">Score: {score}</div>
+          <Button onClick={jump} disabled={!gameStarted || gameOver}>
+            Jump
+          </Button>
+        </CardFooter>
       </Card>
-      <p className="text-white mt-4">Press Space to Jump!</p>
-      <p className="text-white">Score: {score}</p>
     </div>
   );
 }
