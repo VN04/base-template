@@ -1,193 +1,143 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 
-const formatTime = (time) => {
-  const hours = Math.floor(time / 3600000);
-  const minutes = Math.floor((time % 3600000) / 60000);
-  const seconds = Math.floor((time % 60000) / 1000);
-  const milliseconds = time % 1000;
-  return `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds
-    .toString()
-    .padStart(3, "0")}`;
-};
-
-const Alarm = () => {
-  const [alarmTime, setAlarmTime] = useState("");
-  const [isAlarmSet, setIsAlarmSet] = useState(false);
-  const [isAlarmRinging, setIsAlarmRinging] = useState(false);
+function App() {
+  const [mode, setMode] = useState('alarm');
+  const [alarms, setAlarms] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [stopwatch, setStopwatch] = useState({ running: false, time: 0, laps: [] });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (isAlarmSet && !isAlarmRinging) {
-      const [hours, minutes] = alarmTime.split(":");
-      if (
-        currentTime.getHours() === parseInt(hours) &&
-        currentTime.getMinutes() === parseInt(minutes) &&
-        currentTime.getSeconds() === 0
-      ) {
-        setIsAlarmRinging(true);
+  const checkAlarms = () => {
+    const now = currentTime.toTimeString().split(' ')[0];
+    alarms.forEach((alarm, index) => {
+      if (alarm.time === now && !alarm.snoozed) {
+        setAlarms(prev => 
+          prev.map((a, i) => i === index ? { ...a, ringing: true } : a)
+        );
       }
+    });
+  };
+
+  useEffect(checkAlarms, [currentTime]);
+
+  const formatTime = (time) => {
+    const pad = (num) => num.toString().padStart(2, '0');
+    const hours = Math.floor((time % 86400000) / 3600000);
+    const minutes = Math.floor((time % 3600000) / 60000);
+    const seconds = Math.floor((time % 60000) / 1000);
+    const milliseconds = time % 1000;
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(milliseconds)}`;
+  };
+
+  const addAlarm = (time) => {
+    setAlarms(prev => [...prev, { time, ringing: false, snoozed: false }]);
+  };
+
+  const handleAlarmAction = (index, action) => {
+    if (action === 'stop') {
+      setAlarms(prev => prev.map((a, i) => i === index ? { ...a, ringing: false } : a));
+    } else if (action === 'snooze') {
+      const newTime = new Date(currentTime.getTime() + 5 * 60000);
+      setAlarms(prev => 
+        prev.map((a, i) => 
+          i === index ? { ...a, time: newTime.toTimeString().split(' ')[0], ringing: false, snoozed: true } : a
+        )
+      );
     }
-  }, [currentTime, alarmTime, isAlarmSet, isAlarmRinging]);
-
-  const handleSetAlarm = () => {
-    setIsAlarmSet(true);
   };
 
-  const handleStopAlarm = () => {
-    setIsAlarmRinging(false);
-    setIsAlarmSet(false);
+  const startStopwatch = () => {
+    if (!stopwatch.running) {
+      setStopwatch(prev => ({ ...prev, running: true, start: Date.now() - prev.time }));
+    } else {
+      setStopwatch(prev => ({ ...prev, running: false }));
+    }
   };
 
-  const handleSnoozeAlarm = () => {
-    setIsAlarmRinging(false);
-    const snoozeTime = new Date(currentTime.getTime() + 5 * 60000);
-    setAlarmTime(
-      `${snoozeTime.getHours().toString().padStart(2, "0")}:${snoozeTime
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`
-    );
+  const lapStopwatch = () => {
+    if (stopwatch.running) {
+      setStopwatch(prev => ({ ...prev, laps: [...prev.laps, prev.time] }));
+    }
   };
 
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Alarm</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center space-y-4">
-          <div className="text-4xl font-bold">
-            {currentTime.toLocaleTimeString()}
-          </div>
-          <Input
-            type="time"
-            value={alarmTime}
-            onChange={(e) => setAlarmTime(e.target.value)}
-            className="w-full"
-          />
-          {!isAlarmSet && (
-            <Button onClick={handleSetAlarm} className="w-full">
-              Set Alarm
-            </Button>
-          )}
-          {isAlarmRinging && (
-            <div className="space-y-2 w-full">
-              <div className="text-center text-red-500 font-bold">
-                Alarm Ringing!
-              </div>
-              <Button onClick={handleStopAlarm} className="w-full">
-                Stop
-              </Button>
-              <Button onClick={handleSnoozeAlarm} className="w-full">
-                Snooze (5 min)
-              </Button>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const Stopwatch = () => {
-  const [isRunning, setIsRunning] = useState(false);
-  const [time, setTime] = useState(0);
-  const [laps, setLaps] = useState([]);
+  const resetStopwatch = () => {
+    setStopwatch({ running: false, time: 0, laps: [] });
+  };
 
   useEffect(() => {
-    let intervalId;
-    if (isRunning) {
-      intervalId = setInterval(() => {
-        setTime((prevTime) => prevTime + 10);
+    let interval;
+    if (stopwatch.running) {
+      interval = setInterval(() => {
+        setStopwatch(prev => ({ ...prev, time: Date.now() - stopwatch.start }));
       }, 10);
+    } else if (!stopwatch.running && stopwatch.time !== 0) {
+      clearInterval(interval);
     }
-    return () => clearInterval(intervalId);
-  }, [isRunning]);
-
-  const handleStart = () => {
-    setIsRunning(true);
-  };
-
-  const handleStop = () => {
-    setIsRunning(false);
-  };
-
-  const handleLap = () => {
-    setLaps((prevLaps) => [...prevLaps, time]);
-  };
-
-  const handleReset = () => {
-    setIsRunning(false);
-    setTime(0);
-    setLaps([]);
-  };
+    return () => clearInterval(interval);
+  }, [stopwatch.running]);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Stopwatch</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center space-y-4">
-          <div className="text-4xl font-bold">{formatTime(time)}</div>
-          <div className="flex space-x-2">
-            {!isRunning ? (
-              <Button onClick={handleStart}>Start</Button>
-            ) : (
-              <>
-                <Button onClick={handleLap}>Lap</Button>
-                <Button onClick={handleStop}>Stop</Button>
-              </>
-            )}
-            <Button onClick={handleReset}>Reset</Button>
-          </div>
-          {laps.length > 0 && (
-            <div className="w-full">
-              <h3 className="font-bold mb-2">Laps:</h3>
-              <ul className="space-y-1">
-                {laps.map((lap, index) => (
-                  <li key={index}>Lap {index + 1}: {formatTime(lap)}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default function App() {
-  return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Tabs defaultValue="alarm" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="alarm">Alarm</TabsTrigger>
-            <TabsTrigger value="stopwatch">Stopwatch</TabsTrigger>
-          </TabsList>
-          <TabsContent value="alarm">
-            <Alarm />
-          </TabsContent>
-          <TabsContent value="stopwatch">
-            <Stopwatch />
-          </TabsContent>
-        </Tabs>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <div className="mb-4">
+        <Button variant={mode === 'alarm' ? "default" : "outline"} onClick={() => setMode('alarm')}>Alarm</Button>
+        <Button variant={mode === 'stopwatch' ? "default" : "outline"} onClick={() => setMode('stopwatch')}>Stopwatch</Button>
       </div>
+
+      {mode === 'alarm' && (
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Set Alarm</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input type="time" onChange={(e) => addAlarm(e.target.value)} />
+            {alarms.map((alarm, i) => (
+              <div key={i} className="flex items-center justify-between mt-2">
+                <span>{alarm.time}</span>
+                {alarm.ringing && (
+                  <>
+                    <Button onClick={() => handleAlarmAction(i, 'stop')}>Stop</Button>
+                    <Button onClick={() => handleAlarmAction(i, 'snooze')}>Snooze</Button>
+                  </>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {mode === 'stopwatch' && (
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Stopwatch</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl mb-4">{formatTime(stopwatch.time)}</div>
+            <div className="flex justify-between">
+              <Button onClick={startStopwatch}>{stopwatch.running ? 'Stop' : 'Start'}</Button>
+              <Button onClick={lapStopwatch} disabled={!stopwatch.running}>Lap</Button>
+              <Button onClick={resetStopwatch}>Reset</Button>
+            </div>
+            {stopwatch.laps.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-lg font-bold">Laps:</h3>
+                {stopwatch.laps.map((lap, idx) => (
+                  <div key={idx}>{formatTime(lap)}</div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+
+export default App;

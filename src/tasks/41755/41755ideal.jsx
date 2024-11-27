@@ -12,7 +12,16 @@ function Alarm({ alarm, onStop, onSnooze, onDelete }) {
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const alarmTime = new Date(alarm.time);
+      const timeString = alarm.time; // Time in HH:mm format
+      const [hours, minutes] = timeString.split(":");
+
+      // Extract the current date components
+      const year = now.getFullYear();
+      const month = now.getMonth(); // Months are 0-indexed
+      const date = now.getDate();
+
+      // Create the new date by combining the current date with the specified time
+      const alarmTime = new Date(year, month, date, hours, minutes);
       const diff = alarmTime - now;
 
       if (diff <= 0) {
@@ -30,16 +39,16 @@ function Alarm({ alarm, onStop, onSnooze, onDelete }) {
   }, [alarm]);
 
   return (
-    <Card className="mb-4">
-      <CardHeader>
-        <CardTitle>{alarm.time}</CardTitle>
+    <Card className="mb-4 shadow-md rounded-lg">
+      <CardHeader className="bg-blue-50">
+        <CardTitle className="text-lg font-semibold">{alarm.time}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p>Time left: {timeLeft}</p>
-        <div className="flex gap-2 mt-2">
-          <Button onClick={onStop}>Stop</Button>
-          <Button onClick={onSnooze}>Snooze</Button>
-          <Button onClick={onDelete} variant="destructive">
+        <p className="text-sm text-gray-600"><span className="font-bold text-blue-600">{timeLeft}</span></p>
+        <div className="flex gap-2 mt-4">
+          <Button onClick={onStop} className="bg-red-500 text-white">Stop</Button>
+          <Button onClick={onSnooze} className="bg-yellow-500 text-white">Snooze</Button>
+          <Button onClick={onDelete} variant="destructive" className="bg-gray-300">
             Delete
           </Button>
         </div>
@@ -84,29 +93,29 @@ function Stopwatch() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Stopwatch</CardTitle>
+    <Card className="shadow-lg">
+      <CardHeader className="bg-green-50">
+        <CardTitle className="text-lg font-semibold">Stopwatch</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-4xl font-bold mb-4">{formatTime(time)}</div>
-        <div className="flex gap-2 mb-4">
+        <div className="text-4xl font-mono mb-4 text-center">{formatTime(time)}</div>
+        <div className="flex gap-2 mb-4 justify-center">
           {!isRunning ? (
-            <Button onClick={handleStart}>Start</Button>
+            <Button onClick={handleStart} className="bg-green-500 text-white">Start</Button>
           ) : (
             <>
-              <Button onClick={handleStop}>Stop</Button>
-              <Button onClick={handleLap}>Lap</Button>
+              <Button onClick={handleStop} className="bg-red-500 text-white">Stop</Button>
+              <Button onClick={handleLap} className="bg-blue-500 text-white">Lap</Button>
             </>
           )}
-          <Button onClick={handleReset}>Reset</Button>
+          <Button onClick={handleReset} className="bg-gray-500 text-white">Reset</Button>
         </div>
         {laps.length > 0 && (
           <div>
             <h3 className="font-bold mb-2">Laps:</h3>
-            <ul>
+            <ul className="list-disc pl-5">
               {laps.map((lap, index) => (
-                <li key={index}>Lap {index + 1}: {formatTime(lap)}</li>
+                <li className="text-sm text-gray-700" key={index}>Lap {index + 1}: {formatTime(lap)}</li>
               ))}
             </ul>
           </div>
@@ -137,10 +146,22 @@ export default function App() {
     alarmSound.pause();
     alarmSound.currentTime = 0;
     const alarm = alarms.find((a) => a.id === id);
-    const newTime = new Date(new Date(alarm.time).getTime() + 5 * 60000);
+    const timeString = alarm.time; // Time in HH:mm format
+    const [hours, minutes] = timeString.split(":");
+
+    // Extract the current date components
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // Months are 0-indexed
+    const date = now.getDate();
+
+    // Create the new date by combining the current date with the specified time
+    const alarmTime = new Date(year, month, date, hours, minutes);
+    const newTime = (alarmTime.getTime() + 5 * 60000);
+
     setAlarms(
       alarms.map((a) =>
-        a.id === id ? { ...a, time: newTime.toLocaleTimeString() } : a
+        a.id === id ? { ...a, time: new Date(newTime).toLocaleTimeString() } : a
       )
     );
   };
@@ -150,14 +171,14 @@ export default function App() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-md">
-      <h1 className="text-2xl font-bold mb-4">Mobile Clock App</h1>
+    <div className="container mx-auto p-6 max-w-lg bg-gray-50 rounded-md shadow-sm">
+      <h1 className="text-2xl font-bold mb-4 text-center">Mobile Clock App</h1>
       <Tabs defaultValue="alarm">
-        <TabsList className="w-full mb-4">
-          <TabsTrigger value="alarm" className="w-1/2">
+        <TabsList className="flex justify-center">
+          <TabsTrigger value="alarm" className="w-1/2 text-center">
             Alarm
           </TabsTrigger>
-          <TabsTrigger value="stopwatch" className="w-1/2">
+          <TabsTrigger value="stopwatch" className="w-1/2 text-center">
             Stopwatch
           </TabsTrigger>
         </TabsList>
@@ -171,6 +192,7 @@ export default function App() {
                 <Input
                   type="time"
                   value={newAlarmTime}
+                  className="flex-1"
                   onChange={(e) => setNewAlarmTime(e.target.value)}
                 />
                 <Button onClick={addAlarm}>Add Alarm</Button>
