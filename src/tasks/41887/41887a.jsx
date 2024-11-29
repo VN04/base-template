@@ -1,84 +1,78 @@
 import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { useDrop } from 'react-dnd';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const questions = [
-  { id: '1', text: "Throw litter on the road?", type: "don't" },
-  { id: '2', text: "Recycle paper and plastics?", type: 'do' },
-  { id: '3', text: "Leave the tap running while brushing?", type: "don't" },
-  { id: '4', text: "Use public transport when possible?", type: 'do' },
-  { id: '5', text: "Leave lights on when leaving a room?", type: "don't" },
-  { id: '6', text: "Plant trees in your community?", type: 'do' },
-  { id: '7', text: "Use plastic bags for shopping?", type: "don't" },
-  { id: '8', text: "Save water by taking shorter showers?", type: 'do' },
-  { id: '9', text: "Drive a car for short distances?", type: "don't" },
-  { id: '10', text: "Participate in community clean-ups?", type: 'do' },
+  "Throw litter in bins",
+  "Recycle whenever possible",
+  "Use public transport",
+  "Turn off lights when not in use",
+  "Use reusable bags",
+  "Don't throw trash on roads",
+  "Avoid single-use plastics",
+  "Plant trees",
+  "Conserve water",
+  "Report illegal dumping"
 ];
 
-function QuestionCard({ question, index }) {
+const QuestionCard = ({ question, moveCard, section }) => {
+  const [, drop] = useDrop(() => ({
+    accept: 'question',
+    drop: () => moveCard(question, section),
+  }));
+
   return (
-    <Draggable draggableId={question.id} index={index}>
-      {(provided) => (
-        <div 
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className="mb-4"
-        >
-          <Card className="w-full sm:w-80">
-            <CardHeader>
-              <CardTitle>{question.text}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${question.type === 'do' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {question.type === 'do' ? "Do" : "Don't"}
-                </span>
-              </CardDescription>
-            </CardContent>
-            <CardFooter>
-              <p>Drag to reorder</p>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
-    </Draggable>
+    <div ref={drop} className="mb-4">
+      <Card className="w-full max-w-xs mx-auto">
+        <CardContent>
+          <p>{question}</p>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};
+
+const Section = ({ title, questions, moveCard }) => {
+  return (
+    <div className="flex-1 p-4">
+      <h2 className="text-xl font-bold mb-4">{title}</h2>
+      {questions.map((q, index) => (
+        <QuestionCard key={index} question={q} moveCard={moveCard} section={title.toLowerCase()} />
+      ))}
+    </div>
+  );
+};
 
 export default function App() {
-  const [items, setItems] = useState(questions);
+  const [dos, setDos] = useState(questions.slice(0, 5));
+  const [donts, setDonts] = useState(questions.slice(5, 10));
 
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
+  const moveCard = (question, toSection) => {
+    let fromSection = dos.includes(question) ? 'dos' : 'donts';
+    if (fromSection === toSection) return;
 
-    const reorderedItems = Array.from(items);
-    const [removed] = reorderedItems.splice(result.source.index, 1);
-    reorderedItems.splice(result.destination.index, 0, removed);
-
-    setItems(reorderedItems);
+    if (toSection === 'dos') {
+      setDos(prev => [...prev, question]);
+      setDonts(prev => prev.filter(q => q !== question));
+    } else {
+      setDonts(prev => [...prev, question]);
+      setDos(prev => prev.filter(q => q !== question));
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6 text-center">Drag and Drop Questionnaire</h1>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="questionList">
-          {(provided) => (
-            <div 
-              {...provided.droppableProps} 
-              ref={provided.innerRef}
-              className="space-y-4"
-            >
-              {items.map((question, index) => (
-                <QuestionCard key={question.id} question={question} index={index} />
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-      <p className="mt-4 text-sm text-gray-500">Reorder the questions based on your priority or preference.</p>
-    </div>
+    <DndProvider backend={HTML5Backend}>
+      <div className="min-h-screen bg-gray-100 p-4">
+        <div className="container mx-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">Environmental Do's and Don'ts</h1>
+          <div className="flex flex-col sm:flex-row justify-between">
+            <Section title="Do's" questions={dos} moveCard={moveCard} />
+            <Section title="Don'ts" questions={donts} moveCard={moveCard} />
+          </div>
+        </div>
+      </div>
+    </DndProvider>
   );
 }
