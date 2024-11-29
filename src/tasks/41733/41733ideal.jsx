@@ -24,8 +24,18 @@ function App() {
 
   const calculate = () => {
     try {
-      // Using eval for simplicity, note: eval can be dangerous with user input in real-world scenarios
-      let calcResult = eval(input.replace(/log/g, 'Math.log10').replace(/ln/g, 'Math.log').replace(/sin|cos|tan/g, (match) => `Math.${match}`));
+      // Replace the input with correct JavaScript syntax for exponentiation and constants
+      let calcInput = input
+        .replace(/\^/g, '**')        // Replace ^ with **
+        .replace(/log/g, 'Math.log10')
+        .replace(/ln/g, 'Math.log')
+        .replace(/sin|cos|tan/g, (match) => `Math.${match}`)
+        .replace(/π/g, 'Math.PI')    // Replace π with Math.PI
+        .replace(/e/g, 'Math.E')    // Replace e with Math.E
+        .replace(/mod/g, '%'); 
+      
+      let calcResult = eval(calcInput);
+  
       if (isNaN(calcResult)) throw new Error();
       setResult(calcResult.toString());
       setHistory(prev => {

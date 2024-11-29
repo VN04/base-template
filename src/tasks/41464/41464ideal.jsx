@@ -2,14 +2,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-const GAME_WIDTH = 800;
+const GAME_WIDTH = 700;
 const GAME_HEIGHT = 200;
 const DINO_WIDTH = 40;
 const DINO_HEIGHT = 60;
 const HURDLE_WIDTH = 20;
 const HURDLE_HEIGHT = 40;
 const GROUND_HEIGHT = 20;
-const JUMP_HEIGHT = 100;
+const JUMP_HEIGHT = 60;
 const INITIAL_SPEED = 5;
 
 const Dinosaur = ({ top }) => (
@@ -67,7 +67,7 @@ export default function App() {
   const jump = useCallback(() => {
     if (dinoTop === 0) {
       setDinoTop(JUMP_HEIGHT);
-      setTimeout(() => setDinoTop(0), 300);
+      setTimeout(() => setDinoTop(0), 400);
     }
   }, [dinoTop]);
 
