@@ -8,14 +8,22 @@ import { Label } from "@/components/ui/label";
 const cities = ["Kolkata", "Delhi", "Mumbai", "Jaipur", "Pune", "Bangalore"];
 
 const busRoutes = [
-  { from: "Kolkata", to: "Delhi", buses: [
-    { id: 1, departure: "10:00 AM", arrival: "10:00 PM", price: 1500, seats: 30 },
-    { id: 2, departure: "2:00 PM", arrival: "2:00 AM", price: 1800, seats: 25 },
-  ]},
-  { from: "Mumbai", to: "Pune", buses: [
-    { id: 3, departure: "8:00 AM", arrival: "12:00 PM", price: 500, seats: 40 },
-    { id: 4, departure: "4:00 PM", arrival: "8:00 PM", price: 600, seats: 35 },
-  ]},
+  {
+    from: "Kolkata",
+    to: "Delhi",
+    buses: [
+      { id: 1, departure: "10:00 AM", arrival: "10:00 PM", price: 1500, seats: 30 },
+      { id: 2, departure: "2:00 PM", arrival: "2:00 AM", price: 1800, seats: 25 },
+    ],
+  },
+  {
+    from: "Mumbai",
+    to: "Pune",
+    buses: [
+      { id: 3, departure: "8:00 AM", arrival: "12:00 PM", price: 500, seats: 40 },
+      { id: 4, departure: "4:00 PM", arrival: "8:00 PM", price: 600, seats: 35 },
+    ],
+  },
 ];
 
 export default function App() {
@@ -28,7 +36,7 @@ export default function App() {
   const [paymentComplete, setPaymentComplete] = useState(false);
 
   const availableBuses = busRoutes.find(
-    route => route.from === from && route.to === to
+    (route) => route.from === from && route.to === to
   )?.buses || [];
 
   const handleSearch = () => {
@@ -71,6 +79,7 @@ export default function App() {
             <BusList
               buses={availableBuses}
               handleBooking={handleBooking}
+              goBack={() => setStep(1)}
             />
           )}
           {step === 3 && (
@@ -100,7 +109,9 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="from" className="font-semibold">From</Label>
+        <Label htmlFor="from" className="font-semibold">
+          From
+        </Label>
         <Select value={from} onValueChange={setFrom}>
           <SelectTrigger id="from">
             <SelectValue placeholder="Select origin city" />
@@ -115,7 +126,9 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
         </Select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="to" className="font-semibold">To</Label>
+        <Label htmlFor="to" className="font-semibold">
+          To
+        </Label>
         <Select value={to} onValueChange={setTo}>
           <SelectTrigger id="to">
             <SelectValue placeholder="Select destination city" />
@@ -130,7 +143,9 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
         </Select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="date" className="font-semibold">Date of Travel</Label>
+        <Label htmlFor="date" className="font-semibold">
+          Date of Travel
+        </Label>
         <Input
           id="date"
           type="date"
@@ -138,22 +153,38 @@ function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
           onChange={(e) => setDate(e.target.value)}
         />
       </div>
-      <Button onClick={handleSearch} className="w-full bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white font-semibold mt-4">
+      <Button
+        onClick={handleSearch}
+        className="w-full bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white font-semibold mt-4"
+      >
         Search Buses
       </Button>
     </div>
   );
 }
 
-function BusList({ buses, handleBooking }) {
+function BusList({ buses, handleBooking, goBack }) {
   if (buses.length === 0) {
-    return <p className="text-center text-gray-600">No buses available for this route.</p>;
+    return (
+      <div className="space-y-4 text-center">
+        <p className="text-gray-600">No buses available for this route.</p>
+        <Button
+          onClick={goBack}
+          className="bg-red-500 hover:bg-red-600 text-white font-semibold"
+        >
+          Back
+        </Button>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
       {buses.map((bus) => (
-        <Card key={bus.id} className="flex justify-between items-center p-4 shadow-md hover:shadow-lg transition-shadow">
+        <Card
+          key={bus.id}
+          className="flex justify-between items-center p-4 shadow-md hover:shadow-lg transition-shadow"
+        >
           <div>
             <p className="font-semibold">
               {bus.departure} - {bus.arrival}
@@ -161,7 +192,10 @@ function BusList({ buses, handleBooking }) {
             <p>Price: ₹{bus.price}</p>
             <p>Available Seats: {bus.seats}</p>
           </div>
-          <Button onClick={() => handleBooking(bus)} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold">
+          <Button
+            onClick={() => handleBooking(bus)}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+          >
             Book
           </Button>
         </Card>
@@ -190,7 +224,10 @@ function BookingConfirmation({ bus, tickets, setTickets, handlePayment }) {
         />
       </div>
       <p className="font-semibold">Total Amount: ₹{bus.price * tickets}</p>
-      <Button onClick={handlePayment} className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold">
+      <Button
+        onClick={handlePayment}
+        className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold"
+      >
         Pay Now
       </Button>
     </div>
@@ -202,13 +239,27 @@ function Ticket({ bus, from, to, date, tickets }) {
     <div className="space-y-4 bg-white p-6 rounded-lg shadow-md">
       <h3 className="text-xl font-bold text-center">Bus Ticket</h3>
       <div className="grid grid-cols-2 gap-4">
-        <p><strong>From:</strong> {from}</p>
-        <p><strong>To:</strong> {to}</p>
-        <p><strong>Date:</strong> {date}</p>
-        <p><strong>Departure:</strong> {bus.departure}</p>
-        <p><strong>Arrival:</strong> {bus.arrival}</p>
-        <p><strong>Tickets:</strong> {tickets}</p>
-        <p><strong>Total Amount:</strong> ₹{bus.price * tickets}</p>
+        <p>
+          <strong>From:</strong> {from}
+        </p>
+        <p>
+          <strong>To:</strong> {to}
+        </p>
+        <p>
+          <strong>Date:</strong> {date}
+        </p>
+        <p>
+          <strong>Departure:</strong> {bus.departure}
+        </p>
+        <p>
+          <strong>Arrival:</strong> {bus.arrival}
+        </p>
+        <p>
+          <strong>Tickets:</strong> {tickets}
+        </p>
+        <p>
+          <strong>Total Amount:</strong> ₹{bus.price * tickets}
+        </p>
       </div>
       <p className="text-center text-sm text-gray-500">
         Thank you for booking with us!
