@@ -56,6 +56,8 @@ function ReminderForm({ onSubmit, initialValues = {}, onClose }) {
 }
 
 function ReminderCard({ reminder, onComplete, onEdit }) {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   return (
     <Card className={`mb-4 ${priorityColors[reminder.priority]}`}>
       <CardHeader>
@@ -68,7 +70,7 @@ function ReminderCard({ reminder, onComplete, onEdit }) {
           {reminder.status === "active" && (
             <>
               <Button onClick={() => onComplete(reminder.id)}>Complete</Button>
-              <Dialog>
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">Edit</Button>
                 </DialogTrigger>
@@ -76,7 +78,14 @@ function ReminderCard({ reminder, onComplete, onEdit }) {
                   <DialogHeader>
                     <DialogTitle>Edit Reminder</DialogTitle>
                   </DialogHeader>
-                  <ReminderForm onSubmit={(data) => onEdit(reminder.id, data)} initialValues={reminder} />
+                  <ReminderForm
+                    onSubmit={(data) => {
+                      onEdit(reminder.id, data);
+                      setIsEditDialogOpen(false); // Dismiss the dialog after update
+                    }}
+                    initialValues={reminder}
+                    onClose={() => setIsEditDialogOpen(false)}
+                  />
                 </DialogContent>
               </Dialog>
             </>
@@ -90,7 +99,7 @@ function ReminderCard({ reminder, onComplete, onEdit }) {
 export default function App() {
   const [reminders, setReminders] = useState([]);
   const [activeTab, setActiveTab] = useState("active");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -111,7 +120,7 @@ export default function App() {
   const addReminder = (data) => {
     const newReminder = { ...data, id: Date.now(), status: "active" };
     setReminders([...reminders, newReminder]);
-    setIsDialogOpen(false);
+    setIsCreateDialogOpen(false); // Dismiss the create dialog after adding
   };
 
   const handleComplete = (id) => {
@@ -131,7 +140,7 @@ export default function App() {
   return (
     <div className="container mx-auto p-4 max-w-3xl">
       <h1 className="text-3xl font-bold mb-6">Reminder App</h1>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogTrigger asChild>
           <Button className="mb-6">Create New Reminder</Button>
         </DialogTrigger>
@@ -139,7 +148,7 @@ export default function App() {
           <DialogHeader>
             <DialogTitle>Create New Reminder</DialogTitle>
           </DialogHeader>
-          <ReminderForm onSubmit={addReminder} onClose={() => setIsDialogOpen(false)} />
+          <ReminderForm onSubmit={addReminder} onClose={() => setIsCreateDialogOpen(false)} />
         </DialogContent>
       </Dialog>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
