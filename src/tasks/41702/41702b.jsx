@@ -1,216 +1,148 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-function ReminderForm({ addReminder }) {
-  const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
-  const [time, setTime] = useState("");
+function App() {
+  const [reminders, setReminders] = useState([]);
+  const [activeTab, setActiveTab] = useState('active');
+  const [newReminder, setNewReminder] = useState({ note: '', date: '', priority: 'Medium' });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (title && time) {
-      addReminder({ title, note, time, status: "active" });
-      setTitle("");
-      setNote("");
-      setTime("");
+  useEffect(() => {
+    const checkReminders = () => {
+      const now = new Date();
+      setReminders(prev => 
+        prev.map(r => {
+          if (!r.completed && !r.overdue && new Date(r.date) < now) {
+            alert(`Reminder: ${r.note}`);
+            return { ...r, overdue: true };
+          }
+          return r;
+        })
+      );
+    };
+    const timer = setInterval(checkReminders, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const addReminder = () => {
+    if (newReminder.note && newReminder.date) {
+      setReminders([...reminders, { ...newReminder, id: Date.now(), completed: false, overdue: false }]);
+      setNewReminder({ note: '', date: '', priority: 'Medium' });
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        placeholder="Reminder title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        required
-      />
-      <Textarea
-        placeholder="Notes"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-      />
-      <Input
-        type="datetime-local"
-        value={time}
-        onChange={(e) => setTime(e.target.value)}
-        required
-      />
-      <Button type="submit">Add Reminder</Button>
-    </form>
-  );
-}
-
-function ReminderCard({ reminder, onComplete, onIgnore }) {
-  return (
-    <Card className="mb-4">
-      <CardHeader>
-        <CardTitle>{reminder.title}</CardTitle>
-        <CardDescription>{new Date(reminder.time).toLocaleString()}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p>{reminder.note}</p>
-      </CardContent>
-      <CardFooter className="justify-end space-x-2">
-        {reminder.status === "active" && (
-          <>
-            <Button onClick={() => onComplete(reminder.id)}>Complete</Button>
-            <Button variant="outline" onClick={() => onIgnore(reminder.id)}>
-              Ignore
-            </Button>
-          </>
-        )}
-      </CardFooter>
-    </Card>
-  );
-}
-
-function ReminderList({ reminders, onComplete, onIgnore }) {
-  return (
-    <div>
-      {reminders.map((reminder) => (
-        <ReminderCard
-          key={reminder.id}
-          reminder={reminder}
-          onComplete={onComplete}
-          onIgnore={onIgnore}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ReminderAlert({ reminder, onComplete, onIgnore, onClose }) {
-  return (
-    <Alert className="mb-4">
-      <AlertTitle>{reminder.title}</AlertTitle>
-      <AlertDescription>{reminder.note}</AlertDescription>
-      <div className="mt-4 space-x-2">
-        <Button onClick={() => { onComplete(reminder.id); onClose(); }}>
-          Complete
-        </Button>
-        <Button variant="outline" onClick={() => { onIgnore(reminder.id); onClose(); }}>
-          Ignore
-        </Button>
-      </div>
-    </Alert>
-  );
-}
-
-export default function App() {
-  const [reminders, setReminders] = useState([]);
-  const [alertReminder, setAlertReminder] = useState(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      const activeReminder = reminders.find(
-        (r) => r.status === "active" && new Date(r.time) <= now
-      );
-      if (activeReminder) {
-        setAlertReminder(activeReminder);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [reminders]);
-
-  const addReminder = (reminder) => {
-    setReminders([...reminders, { ...reminder, id: Date.now() }]);
+  const updateReminder = (id, updatedFields) => {
+    setReminders(reminders.map(r => r.id === id ? { ...r, ...updatedFields } : r));
   };
 
-  const updateReminderStatus = (id, status) => {
-    setReminders(
-      reminders.map((r) => (r.id === id ? { ...r, status } : r))
-    );
+  const completeReminder = (id) => {
+    updateReminder(id, { completed: true, overdue: false });
   };
 
-  const completeReminder = (id) => updateReminderStatus(id, "done");
-  const ignoreReminder = (id) => updateReminderStatus(id, "overdue");
+  const snoozeReminder = (id) => {
+    updateReminder(id, { overdue: true });
+  };
+
+  const filteredReminders = reminders.filter(reminder => {
+    switch (activeTab) {
+      case 'active': return !reminder.completed && !reminder.overdue;
+      case 'done': return reminder.completed;
+      case 'overdue': return reminder.overdue;
+      default: return true;
+    }
+  });
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl">
-      <h1 className="text-3xl font-bold mb-8 text-center">Reminder App</h1>
-
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="mb-8 w-full">Create New Reminder</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a new reminder</DialogTitle>
-            <DialogDescription>
-              Fill in the details for your new reminder.
-            </DialogDescription>
-          </DialogHeader>
-          <ReminderForm addReminder={addReminder} />
-        </DialogContent>
-      </Dialog>
-
-      <Tabs defaultValue="active">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">Reminder App</h1>
+      
+      <Tabs defaultValue="active" className="w-full max-w-lg mx-auto">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="done">Done</TabsTrigger>
           <TabsTrigger value="overdue">Overdue</TabsTrigger>
         </TabsList>
-        <TabsContent value="active">
-          <ReminderList
-            reminders={reminders.filter((r) => r.status === "active")}
-            onComplete={completeReminder}
-            onIgnore={ignoreReminder}
-          />
-        </TabsContent>
-        <TabsContent value="done">
-          <ReminderList
-            reminders={reminders.filter((r) => r.status === "done")}
-            onComplete={completeReminder}
-            onIgnore={ignoreReminder}
-          />
-        </TabsContent>
-        <TabsContent value="overdue">
-          <ReminderList
-            reminders={reminders.filter((r) => r.status === "overdue")}
-            onComplete={completeReminder}
-            onIgnore={ignoreReminder}
-          />
-        </TabsContent>
+        
+        <div className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Add New Reminder</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="note">Note</Label>
+                <Input id="note" value={newReminder.note} onChange={e => setNewReminder({...newReminder, note: e.target.value})} />
+                <Label htmlFor="date">Date & Time</Label>
+                <Input id="date" type="datetime-local" value={newReminder.date} onChange={e => setNewReminder({...newReminder, date: e.target.value})} />
+                <Label htmlFor="priority">Priority</Label>
+                <Select onValueChange={value => setNewReminder({...newReminder, priority: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={newReminder.priority} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={addReminder}>Add Reminder</Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {filteredReminders.map(reminder => (
+            <TabsContent value={activeTab} key={reminder.id}>
+              <ReminderCard 
+                reminder={reminder} 
+                onComplete={completeReminder} 
+                onSnooze={snoozeReminder}
+                onUpdate={(fields) => updateReminder(reminder.id, fields)}
+              />
+            </TabsContent>
+          ))}
+        </div>
       </Tabs>
-
-      {alertReminder && (
-        <Dialog open={true} onOpenChange={() => setAlertReminder(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reminder Alert</DialogTitle>
-            </DialogHeader>
-            <ReminderAlert
-              reminder={alertReminder}
-              onComplete={completeReminder}
-              onIgnore={ignoreReminder}
-              onClose={() => setAlertReminder(null)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }
+
+function ReminderCard({ reminder, onComplete, onSnooze, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editReminder, setEditReminder] = useState(reminder);
+
+  const priorityColor = {
+    'High': 'bg-red-100 text-red-800',
+    'Medium': 'bg-yellow-100 text-yellow-800',
+    'Low': 'bg-green-100 text-green-800'
+  };
+
+  return (
+    <Card className={`mb-4 ${priorityColor[reminder.priority]}`}>
+      <CardHeader>
+        <CardTitle>{isEditing ? (
+          <Input value={editReminder.note} onChange={e => setEditReminder({...editReminder, note: e.target.value})} />
+        ) : reminder.note}</CardTitle>
+        <CardDescription>{reminder.date}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!reminder.completed && !reminder.overdue && (
+          <div>
+            <Button onClick={() => setIsEditing(!isEditing)}>{isEditing ? 'Cancel' : 'Edit'}</Button>
+            {isEditing ? (
+              <Button onClick={() => { onUpdate(editReminder); setIsEditing(false); }}>Save</Button>
+            ) : (
+              <Button onClick={() => onComplete(reminder.id)}>Complete</Button>
+            )}
+            <Button onClick={() => onSnooze(reminder.id)} variant="outline">Snooze</Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default App;
