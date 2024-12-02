@@ -44,7 +44,7 @@ function Quiz() {
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestion < 10) {
+    if (currentQuestion <= 10) {
       setQuestion(generateQuestion());
       setUserAnswer('');
       setResult(null);
