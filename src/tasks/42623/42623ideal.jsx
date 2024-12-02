@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
 const cities = ["Kolkata", "Delhi", "Mumbai", "Jaipur", "Pune", "Bangalore"];
@@ -105,43 +104,76 @@ export default function App() {
   );
 }
 
+function SearchableDropdown({ label, options, value, onChange, placeholder }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filteredOptions = options.filter((option) =>
+    option.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="relative">
+      <Label className="font-semibold">{label}</Label>
+      <div
+        className="border rounded-md p-2 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {value || <span className="text-gray-400">{placeholder}</span>}
+      </div>
+      {isOpen && (
+        <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
+          <div className="p-2">
+            <input
+              type="text"
+              className="w-full p-2 border rounded-md"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <ul className="max-h-40 overflow-y-auto">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <li
+                  key={option}
+                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => {
+                    onChange(option);
+                    setIsOpen(false);
+                    setSearchTerm("");
+                  }}
+                >
+                  {option}
+                </li>
+              ))
+            ) : (
+              <li className="p-2 text-gray-500">No options found</li>
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SearchForm({ from, setFrom, to, setTo, date, setDate, handleSearch }) {
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="from" className="font-semibold">
-          From
-        </Label>
-        <Select value={from} onValueChange={setFrom}>
-          <SelectTrigger id="from">
-            <SelectValue placeholder="Select origin city" />
-          </SelectTrigger>
-          <SelectContent>
-            {cities.map((city) => (
-              <SelectItem key={city} value={city}>
-                {city}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="to" className="font-semibold">
-          To
-        </Label>
-        <Select value={to} onValueChange={setTo}>
-          <SelectTrigger id="to">
-            <SelectValue placeholder="Select destination city" />
-          </SelectTrigger>
-          <SelectContent>
-            {cities.map((city) => (
-              <SelectItem key={city} value={city}>
-                {city}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <SearchableDropdown
+        label="From"
+        options={cities}
+        value={from}
+        onChange={setFrom}
+        placeholder="Select origin city"
+      />
+      <SearchableDropdown
+        label="To"
+        options={cities}
+        value={to}
+        onChange={setTo}
+        placeholder="Select destination city"
+      />
       <div className="space-y-2">
         <Label htmlFor="date" className="font-semibold">
           Date of Travel
@@ -219,7 +251,9 @@ function BookingConfirmation({ bus, tickets, setTickets, handlePayment }) {
           min="1"
           max={bus.seats}
           value={tickets}
-          onChange={(e) => setTickets(Math.min(parseInt(e.target.value) || 1, bus.seats))}
+          onChange={(e) =>
+            setTickets(Math.min(parseInt(e.target.value) || 1, bus.seats))
+          }
           className="w-20"
         />
       </div>
@@ -237,33 +271,14 @@ function BookingConfirmation({ bus, tickets, setTickets, handlePayment }) {
 function Ticket({ bus, from, to, date, tickets }) {
   return (
     <div className="space-y-4 bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-xl font-bold text-center">Bus Ticket</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <p>
-          <strong>From:</strong> {from}
-        </p>
-        <p>
-          <strong>To:</strong> {to}
-        </p>
-        <p>
-          <strong>Date:</strong> {date}
-        </p>
-        <p>
-          <strong>Departure:</strong> {bus.departure}
-        </p>
-        <p>
-          <strong>Arrival:</strong> {bus.arrival}
-        </p>
-        <p>
-          <strong>Tickets:</strong> {tickets}
-        </p>
-        <p>
-          <strong>Total Amount:</strong> ₹{bus.price * tickets}
-        </p>
-      </div>
-      <p className="text-center text-sm text-gray-500">
-        Thank you for booking with us!
-      </p>
+      <h3 className="text-lg font-semibold text-center">Booking Confirmed</h3>
+      <p>From: {from}</p>
+      <p>To: {to}</p>
+      <p>Date: {date}</p>
+      <p>Departure: {bus.departure}</p>
+      <p>Arrival: {bus.arrival}</p>
+      <p>Tickets: {tickets}</p>
+      <p>Total Paid: ₹{bus.price * tickets}</p>
     </div>
   );
 }
