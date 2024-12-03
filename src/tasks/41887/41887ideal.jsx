@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,19 +18,20 @@ const questions = [
   { id: "q10", text: "Use public transportation", type: "do's" },
 ];
 
-const Section = ({ title, items, onDrop, highlight }) => (
+const Section = ({ title, items, onDrop, highlight, bgColor }) => (
   <div
     onDragOver={(e) => e.preventDefault()}
     onDrop={onDrop}
-    className={`min-h-[200px] p-4 rounded-lg shadow ${
-      highlight ? "bg-red-100" : "bg-gray-100"
+    onTouchMove={(e) => e.preventDefault()} // Prevent scrolling during touch drag
+    className={`min-h-[200px] p-4 rounded-lg shadow-md transition-all duration-300 ${
+      highlight ? "bg-red-50" : bgColor
     }`}
   >
-    <h2 className="text-lg font-bold mb-4">{title}</h2>
+    <h2 className="text-lg font-semibold text-gray-800 mb-4">{title}</h2>
     {items.map((item) => (
-      <Card key={item.id} className="mb-2">
+      <Card key={item.id} className="mb-2 bg-white shadow-sm hover:shadow-md">
         <CardHeader>
-          <CardTitle className="text-sm">{item.text}</CardTitle>
+          <CardTitle className="text-sm text-gray-700">{item.text}</CardTitle>
         </CardHeader>
       </Card>
     ))}
@@ -47,18 +47,18 @@ export default function App() {
 
   const handleDragStart = (item) => setDraggedItem(item);
 
-  const handleDrop = (sectionType) => {
+  const handleTouchStart = (item) => setDraggedItem(item);
+
+  const handleTouchEnd = (sectionType) => {
     if (!draggedItem) return;
 
     const correct = draggedItem.type === sectionType;
 
-    // Highlight wrong drop briefly
     if (!correct) {
       setHighlightWrong(true);
       setTimeout(() => setHighlightWrong(false), 1000);
     }
 
-    // Move the card to the correct section
     setUnassigned((prev) => prev.filter((q) => q.id !== draggedItem.id));
     if (draggedItem.type === "do's") setDos((prev) => [...prev, draggedItem]);
     if (draggedItem.type === "don'ts") setDonts((prev) => [...prev, draggedItem]);
@@ -74,23 +74,26 @@ export default function App() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-8 text-center">
+      <h1 className="text-2xl font-bold mb-8 text-center text-gray-800">
         Drag-and-Drop Questionnaire
       </h1>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div>
-          <h2 className="text-lg font-bold mb-4">Questions</h2>
-          <div className="min-h-[300px] bg-gray-100 p-4 rounded-lg shadow">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Questions</h2>
+          <div className="min-h-[300px] bg-gray-50 p-4 rounded-lg shadow-sm">
             {unassigned.map((item) => (
               <div
                 key={item.id}
                 draggable
                 onDragStart={() => handleDragStart(item)}
+                onTouchStart={() => handleTouchStart(item)}
                 className="cursor-pointer mb-2"
               >
-                <Card>
+                <Card className="bg-white shadow-sm hover:shadow-md">
                   <CardHeader>
-                    <CardTitle className="text-sm">{item.text}</CardTitle>
+                    <CardTitle className="text-sm text-gray-700">
+                      {item.text}
+                    </CardTitle>
                   </CardHeader>
                 </Card>
               </div>
@@ -100,20 +103,22 @@ export default function App() {
         <Section
           title="Do's"
           items={dos}
-          onDrop={() => handleDrop("do's")}
+          onDrop={() => handleTouchEnd("do's")}
           highlight={highlightWrong && draggedItem?.type === "don'ts"}
+          bgColor="bg-green-50"
         />
         <Section
           title="Don'ts"
           items={donts}
-          onDrop={() => handleDrop("don'ts")}
+          onDrop={() => handleTouchEnd("don'ts")}
           highlight={highlightWrong && draggedItem?.type === "do's"}
+          bgColor="bg-red-50"
         />
       </div>
       <div className="flex justify-center mt-8">
         <button
           onClick={resetGame}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-300 shadow-md"
         >
           Reset
         </button>
@@ -121,4 +126,3 @@ export default function App() {
     </div>
   );
 }
-
